@@ -38,7 +38,6 @@ def plot_positional_encoding(pe: torch.Tensor) -> None:
 
 
 
-
 class RecipeDataset(Dataset):
     """Example dataset for plasma etching recipes."""
 
@@ -134,6 +133,23 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
     if weights.dim() == 3:
         weights = weights.mean(0)
     return weights.mean(0)
+  
+    def __init__(self, num_step_types: int, d_model: int, nhead: int, num_targets: int):
+        super().__init__()
+        self.embedding = nn.Embedding(num_step_types, d_model)
+        self.knob_proj = nn.Linear(1, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=2)
+        self.fc = nn.Linear(d_model, num_targets)
+
+    def forward(self, step_types: torch.Tensor, knobs: torch.Tensor):
+        # step_types: (B, L)
+        # knobs: (B, L)
+        emb = self.embedding(step_types) + self.knob_proj(knobs.unsqueeze(-1))
+        emb = emb.transpose(0, 1)  # (L, B, D)
+        enc = self.encoder(emb)
+        enc = enc.mean(dim=0)  # (B, D)
+        return self.fc(enc)
 
 
 def train_example():
@@ -146,7 +162,9 @@ def train_example():
     dataset = RecipeDataset(csv_path, seq_len=seq_len, num_step_types=num_step_types)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
+
     model = AttentionModel(num_step_types=num_step_types, d_model=32, nhead=4, num_targets=num_targets, seq_len=seq_len)
+    model = AttentionModel(num_step_types=num_step_types, d_model=32, nhead=4, num_targets=num_targets)
     optim = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
@@ -159,6 +177,7 @@ def train_example():
             loss.backward()
             optim.step()
         print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
+
 
     # visualize positional encodings
     plot_positional_encoding(model.pos_encoder.pe[:seq_len])

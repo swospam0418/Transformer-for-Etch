@@ -9,7 +9,8 @@ The code uses PyTorch and expects recipe steps and tuning knob values as input
 features. The model outputs predicted profile properties such as bamboo width
 or etch depth. The example also demonstrates basic explainability utilities
 like positional encoding and attention heatmaps so you can inspect how each
-step influences the prediction.
+step influences the prediction or etch depth.
+
 
 ## Files
 
@@ -26,9 +27,11 @@ pip install -r requirements.txt
 python attention_model.py
 ```
 
+
 Running the script will train on a small synthetic dataset and then display a
 heatmap of the positional encodings as well as the attention weights for an
 example recipe, giving a quick look at how steps interact.
+
 
 This repository does not include a dataset. You must provide your own
 data in the expected format to train the model.
