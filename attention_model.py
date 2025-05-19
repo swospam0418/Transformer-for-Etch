@@ -61,7 +61,86 @@ class RecipeDataset(Dataset):
         targets = row[self.target_cols].to_numpy(dtype=np.float32)
         return torch.from_numpy(step_types), torch.from_numpy(knobs), torch.from_numpy(targets)
 
+      
+class ExcelRecipeDataset(Dataset):
+    """Load recipe data from an Excel workbook with multiple sheets."""
 
+    def __init__(self, excel_path: str):
+        sheets = pd.read_excel(excel_path, sheet_name=None)
+        frames = []
+        max_len = 0
+        for df in sheets.values():
+            step_cols = [c for c in df.columns if c.startswith("step_type_")]
+            knob_cols = [c for c in df.columns if c.startswith("knob_")]
+            max_len = max(max_len, len(step_cols))
+            frames.append(df)
+
+        all_step_cols = [f"step_type_{i}" for i in range(max_len)]
+        all_knob_cols = [f"knob_{i}" for i in range(max_len)]
+        for df in frames:
+            for col in all_step_cols:
+                if col not in df.columns:
+                    df[col] = 0
+            for col in all_knob_cols:
+                if col not in df.columns:
+                    df[col] = 0.0
+            df.reindex(columns=all_step_cols + all_knob_cols, fill_value=0)
+
+        self.data = pd.concat(frames, ignore_index=True)
+        self.seq_len = max_len
+        self.step_cols = all_step_cols
+        self.knob_cols = all_knob_cols
+        self.target_cols = [c for c in self.data.columns if c.startswith("target_")]
+        self.num_step_types = int(self.data[self.step_cols].max().max()) + 1
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        row = self.data.iloc[idx]
+        step_types = row[self.step_cols].to_numpy(dtype=np.int64)
+        knobs = row[self.knob_cols].to_numpy(dtype=np.float32)
+        targets = row[self.target_cols].to_numpy(dtype=np.float32)
+        return (
+            torch.from_numpy(step_types),
+            torch.from_numpy(knobs),
+            torch.from_numpy(targets),
+        )
+
+
+def _generate_example_csv(path: str, num_samples=100, seq_len=4, num_targets=2, num_step_types=5):
+    rng = np.random.default_rng(0)
+    data = {}
+    for i in range(seq_len):
+        data[f"step_type_{i}"] = rng.integers(0, num_step_types, size=num_samples)
+        data[f"knob_{i}"] = rng.random(size=num_samples)
+    for t in range(num_targets):
+        data[f"target_{t}"] = rng.random(size=num_samples)
+    pd.DataFrame(data).to_csv(path, index=False)
+
+
+def _generate_example_excel(path: str) -> None:
+    """Create a toy Excel workbook with two recipe structures."""
+    rng = np.random.default_rng(0)
+    # first sheet has 4 steps
+    data_a = {}
+    for i in range(4):
+        data_a[f"step_type_{i}"] = rng.integers(0, 5, size=50)
+        data_a[f"knob_{i}"] = rng.random(size=50)
+    data_a["target_0"] = rng.random(size=50)
+    df_a = pd.DataFrame(data_a)
+
+    # second sheet has 3 steps
+    data_b = {}
+    for i in range(3):
+        data_b[f"step_type_{i}"] = rng.integers(0, 5, size=50)
+        data_b[f"knob_{i}"] = rng.random(size=50)
+    data_b["target_0"] = rng.random(size=50)
+    df_b = pd.DataFrame(data_b)
+
+    with pd.ExcelWriter(path) as writer:
+        df_a.to_excel(writer, sheet_name="ME_SL1_SL2_DF", index=False)
+        df_b.to_excel(writer, sheet_name="ME_SL1_DF", index=False)
 
 
 class AttentionModel(nn.Module):
@@ -161,5 +240,39 @@ def train_example():
     print("Step importance:", step_importance(attn))
 
 
+def train_excel_example():
+    excel_path = "recipes.xlsx"
+    _generate_example_excel(excel_path)
+    dataset = ExcelRecipeDataset(excel_path)
+    loader = DataLoader(dataset, batch_size=16, shuffle=True)
+
+    model = AttentionModel(
+        num_step_types=dataset.num_step_types,
+        d_model=32,
+        nhead=4,
+        num_targets=len(dataset.target_cols),
+        seq_len=dataset.seq_len,
+    )
+    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = nn.MSELoss()
+
+    model.train()
+    for epoch in range(5):
+        for step_types, knobs, targets in loader:
+            optim.zero_grad()
+            preds = model(step_types, knobs)
+            loss = loss_fn(preds, targets)
+            loss.backward()
+            optim.step()
+        print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
+
+    plot_positional_encoding(model.pos_encoder.pe[:dataset.seq_len])
+    step_types, knobs, _ = next(iter(loader))
+    attn = model.attention_heatmap(step_types[0], knobs[0])
+    plot_attention_heatmap(attn)
+    print("Step importance:", step_importance(attn))
+
+
 if __name__ == "__main__":
-    train_example()
+    train_excel_example()
+

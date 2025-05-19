@@ -40,6 +40,27 @@ class EtchRateDataset(Dataset):
 
 
 
+def _generate_example_csv(
+    path: str,
+    num_samples: int = 100,
+    seq_len: int = 4,
+    num_targets: int = 1,
+    num_step_types: int = 5,
+    num_schemes: int = 3,
+    num_layouts: int = 2,
+):
+    rng = np.random.default_rng(0)
+    data = {}
+    for i in range(seq_len):
+        data[f"step_type_{i}"] = rng.integers(0, num_step_types, size=num_samples)
+        data[f"knob_{i}"] = rng.random(size=num_samples)
+    data["scheme_id"] = rng.integers(0, num_schemes, size=num_samples)
+    data["layout_id"] = rng.integers(0, num_layouts, size=num_samples)
+    for t in range(num_targets):
+        data[f"target_{t}"] = rng.random(size=num_samples)
+    pd.DataFrame(data).to_csv(path, index=False)
+
+
 
 class EtchRateTransformer(nn.Module):
     """Transformer model for etch rate prediction with scheme/layout embeddings."""
@@ -90,6 +111,17 @@ def train_etch_rate_example():
     num_layouts = 2
     num_targets = 1
 
+
+    _generate_example_csv(
+        csv_path,
+        num_samples=200,
+        seq_len=seq_len,
+        num_targets=num_targets,
+        num_step_types=num_step_types,
+        num_schemes=num_schemes,
+        num_layouts=num_layouts,
+    )
+    
     dataset = EtchRateDataset(csv_path, seq_len=seq_len)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
 

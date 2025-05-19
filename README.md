@@ -14,6 +14,14 @@ step influences the prediction or etch depth.
 
 ## Files
 
+
+- `attention_model.py` – basic attention model and utilities. Includes an
+  example for loading recipe data from an Excel workbook where each sheet
+  corresponds to a different recipe structure.
+- `etch_rate_model.py` – extended example with film scheme and layout embeddings.
+- `requirements.txt` – Python dependencies (including `openpyxl` for Excel
+  support).
+
 - `attention_model.py` – basic attention model and utilities.
 - `etch_rate_model.py` – extended example with film scheme and layout embeddings.
 - `requirements.txt` – Python dependencies.
@@ -21,7 +29,9 @@ step influences the prediction or etch depth.
 ## Usage
 
 Install the dependencies and adapt the dataset loader in `attention_model.py`
-to your CSV or database. The script includes a simple training loop example.
+to your CSV, database, or Excel workbook. The script includes a simple
+training loop example that demonstrates loading multiple sheets from an Excel
+file.
 
 ```bash
 pip install -r requirements.txt
