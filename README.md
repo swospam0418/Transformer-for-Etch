@@ -22,28 +22,22 @@ step influences the prediction or etch depth.
 - `requirements.txt` – Python dependencies (including `openpyxl` for Excel
   support).
 
-- `attention_model.py` – basic attention model and utilities.
-- `etch_rate_model.py` – extended example with film scheme and layout embeddings.
-- `requirements.txt` – Python dependencies.
-
 ## Usage
 
 Install the dependencies and adapt the dataset loader in `attention_model.py`
-to your CSV, database, or Excel workbook. The script includes a simple
-training loop example that demonstrates loading multiple sheets from an Excel
-file.
+to your Excel workbook. The script includes a simple training loop that
+demonstrates loading multiple sheets and reports training/test R² scores.
 
 ```bash
 pip install -r requirements.txt
-python attention_model.py
+python attention_model.py recipes.xlsx --epochs 20
 ```
 
 
 
-Running the script expects an input CSV file in the format described in
-`attention_model.py`. It will display a heatmap of the positional encodings as
-well as the attention weights for an example recipe, giving a quick look at how
-steps interact.
+Running the script expects an Excel workbook in the format described in
+`attention_model.py`. It will display a heatmap of the positional encodings and
+attention weights for a sample recipe so you can inspect how steps interact.
 
 
 This repository does not include a dataset. You must provide your own

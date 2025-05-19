@@ -39,9 +39,6 @@ class EtchRateDataset(Dataset):
         )
 
 
-
-
-
 class EtchRateTransformer(nn.Module):
     """Transformer model for etch rate prediction with scheme/layout embeddings."""
 
@@ -83,6 +80,7 @@ class EtchRateTransformer(nn.Module):
         return self.fc(enc.mean(dim=1))
 
 
+
 def train_etch_rate_example():
     csv_path = "etch_example.csv"
     seq_len = 5
@@ -119,4 +117,4 @@ def train_etch_rate_example():
 
 
 if __name__ == "__main__":
-    train_etch_rate_example()
+    print("etch_rate_model.py provides the EtchRateTransformer class for advanced use cases.")

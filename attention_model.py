@@ -251,30 +251,16 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
     return weights.mean(0)
 
 
-def train_example():
-    csv_path = "example.csv"
-    seq_len = 4
-    num_step_types = 5
-    num_targets = 2
 
-    dataset = RecipeDataset(csv_path, seq_len=seq_len, num_step_types=num_step_types)
-    loader = DataLoader(dataset, batch_size=16, shuffle=True)
+def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
+    """Train on a workbook containing multiple recipe structures."""
+    dataset = MultiSheetRecipeDataset(excel_path)
+    train_size = int(len(dataset) * 0.8)
+    test_size = len(dataset) - train_size
+    train_ds, test_ds = random_split(dataset, [train_size, test_size])
 
-
-    model = AttentionModel(num_step_types=num_step_types, d_model=32, nhead=4, num_targets=num_targets, seq_len=seq_len)
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
-
-    model.train()
-    for epoch in range(5):
-        for step_types, knobs, targets in loader:
-            optim.zero_grad()
-            preds = model(step_types, knobs)
-            loss = loss_fn(preds, targets)
-            loss.backward()
-            optim.step()
-        print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
-
+    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
+    test_loader = DataLoader(test_ds, batch_size=16, shuffle=False)
 
     # visualize positional encodings
     plot_positional_encoding(model.pos_encoder.pe[:seq_len])
@@ -293,29 +279,62 @@ def train_excel_example():
 
     model = AttentionModel(
         num_step_types=dataset.num_step_types,
-        d_model=32,
+        d_model=64,
         nhead=4,
         num_targets=len(dataset.target_cols),
         seq_len=dataset.seq_len,
     )
+
     optim = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
-    model.train()
-    for epoch in range(5):
-        for step_types, knobs, targets in loader:
+    for epoch in range(epochs):
+        model.train()
+        for step_types, knobs, targets in train_loader:
             optim.zero_grad()
             preds = model(step_types, knobs)
             loss = loss_fn(preds, targets)
             loss.backward()
             optim.step()
-        print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
 
-    plot_positional_encoding(model.pos_encoder.pe[:dataset.seq_len])
-    step_types, knobs, _ = next(iter(loader))
-    attn = model.attention_heatmap(step_types[0], knobs[0])
+        # evaluate R2 on train and test sets
+        model.eval()
+        with torch.no_grad():
+            train_preds, train_tgts = [], []
+            for st, kb, tg in train_loader:
+                p = model(st, kb)
+                train_preds.append(p)
+                train_tgts.append(tg)
+            test_preds, test_tgts = [], []
+            for st, kb, tg in test_loader:
+                p = model(st, kb)
+                test_preds.append(p)
+                test_tgts.append(tg)
+        train_preds = torch.cat(train_preds).cpu().numpy()
+        train_tgts = torch.cat(train_tgts).cpu().numpy()
+        test_preds = torch.cat(test_preds).cpu().numpy()
+        test_tgts = torch.cat(test_tgts).cpu().numpy()
+
+        train_r2 = r2_score(train_tgts, train_preds, multioutput="variance_weighted")
+        test_r2 = r2_score(test_tgts, test_preds, multioutput="variance_weighted")
+        print(
+            f"Epoch {epoch+1}/{epochs} Loss {loss.item():.4f} Train R2 {train_r2:.3f} Test R2 {test_r2:.3f}"
+        )
+
+    # explainability utilities
+    plot_positional_encoding(model.pos_encoder.pe[: dataset.seq_len])
+    sample_steps, sample_knobs, sample_targets = next(iter(test_loader))
+    attn = model.attention_heatmap(sample_steps[0], sample_knobs[0])
     plot_attention_heatmap(attn)
     print("Step importance:", step_importance(attn))
+
+    # show real vs predicted for a few recipes
+    with torch.no_grad():
+        preds = model(sample_steps, sample_knobs)
+    for i in range(min(3, len(sample_steps))):
+        print(
+            f"Recipe {i}: real={sample_targets[i].tolist()} pred={preds[i].tolist()}"
+        )
 
 
 def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
@@ -387,7 +406,17 @@ def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":d
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train transformer on recipe workbook")
+    parser.add_argument("workbook", help="Path to Excel workbook with recipes")
+    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    args = parser.parse_args()
+
+    train_multisheet_excel(args.workbook, epochs=args.epochs)
+
     # Example usage: provide an Excel workbook with multiple recipe sheets.
     train_multisheet_excel("recipes.xlsx")
+
 
