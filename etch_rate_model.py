@@ -40,25 +40,6 @@ class EtchRateDataset(Dataset):
 
 
 
-def _generate_example_csv(
-    path: str,
-    num_samples: int = 100,
-    seq_len: int = 4,
-    num_targets: int = 1,
-    num_step_types: int = 5,
-    num_schemes: int = 3,
-    num_layouts: int = 2,
-):
-    rng = np.random.default_rng(0)
-    data = {}
-    for i in range(seq_len):
-        data[f"step_type_{i}"] = rng.integers(0, num_step_types, size=num_samples)
-        data[f"knob_{i}"] = rng.random(size=num_samples)
-    data["scheme_id"] = rng.integers(0, num_schemes, size=num_samples)
-    data["layout_id"] = rng.integers(0, num_layouts, size=num_samples)
-    for t in range(num_targets):
-        data[f"target_{t}"] = rng.random(size=num_samples)
-    pd.DataFrame(data).to_csv(path, index=False)
 
 
 
@@ -103,50 +84,5 @@ class EtchRateTransformer(nn.Module):
         return self.fc(enc.mean(dim=1))
 
 
-def train_etch_rate_example():
-    csv_path = "etch_example.csv"
-    seq_len = 5
-    num_step_types = 6
-    num_schemes = 3
-    num_layouts = 2
-    num_targets = 1
-
-
-    _generate_example_csv(
-        csv_path,
-        num_samples=200,
-        seq_len=seq_len,
-        num_targets=num_targets,
-        num_step_types=num_step_types,
-        num_schemes=num_schemes,
-        num_layouts=num_layouts,
-    )
-    
-    dataset = EtchRateDataset(csv_path, seq_len=seq_len)
-    loader = DataLoader(dataset, batch_size=16, shuffle=True)
-
-    model = EtchRateTransformer(
-        num_step_types=num_step_types,
-        num_schemes=num_schemes,
-        num_layouts=num_layouts,
-        d_model=32,
-        nhead=4,
-        num_targets=num_targets,
-        seq_len=seq_len,
-    )
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
-
-    model.train()
-    for epoch in range(5):
-        for step_types, knobs, scheme, layout, targets in loader:
-            optim.zero_grad()
-            preds = model(step_types, knobs, scheme, layout)
-            loss = loss_fn(preds, targets)
-            loss.backward()
-            optim.step()
-        print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
-
-
 if __name__ == "__main__":
-    train_etch_rate_example()
+    print("etch_rate_model.py provides the EtchRateTransformer class for advanced use cases.")
