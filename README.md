@@ -10,7 +10,21 @@ This project provides a minimal implementation of an attention-based model to le
 
 ## Usage
 
-Prepare an Excel workbook where each sheet defines a recipe. Columns starting with `X_` represent sequential step inputs and those beginning with `Y_` are targets. Install the dependencies and run training:
+Prepare an Excel workbook where each sheet defines a recipe.
+
+### Column naming
+
+Step columns must be prefixed with `X_<stepType>` describing the step type
+(for example `X_ME_Power`). Target columns should begin with `Y_`.
+An excerpt of a minimal worksheet might look like:
+
+```
+| X_ME_Power | X_ME_Time | Y_EtchRate |
+|------------|-----------|-----------|
+| 300        | 60        | 42        |
+```
+
+Install the dependencies and run training:
 
 ```bash
 pip install -r requirements.txt
