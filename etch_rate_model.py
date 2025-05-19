@@ -39,6 +39,7 @@ class EtchRateDataset(Dataset):
         )
 
 
+
 def _generate_example_csv(
     path: str,
     num_samples: int = 100,
@@ -58,6 +59,7 @@ def _generate_example_csv(
     for t in range(num_targets):
         data[f"target_{t}"] = rng.random(size=num_samples)
     pd.DataFrame(data).to_csv(path, index=False)
+
 
 
 class EtchRateTransformer(nn.Module):
@@ -109,6 +111,7 @@ def train_etch_rate_example():
     num_layouts = 2
     num_targets = 1
 
+
     _generate_example_csv(
         csv_path,
         num_samples=200,
@@ -118,6 +121,7 @@ def train_etch_rate_example():
         num_schemes=num_schemes,
         num_layouts=num_layouts,
     )
+    
     dataset = EtchRateDataset(csv_path, seq_len=seq_len)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
 

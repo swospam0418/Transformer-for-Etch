@@ -61,7 +61,7 @@ class RecipeDataset(Dataset):
         targets = row[self.target_cols].to_numpy(dtype=np.float32)
         return torch.from_numpy(step_types), torch.from_numpy(knobs), torch.from_numpy(targets)
 
-
+      
 class ExcelRecipeDataset(Dataset):
     """Load recipe data from an Excel workbook with multiple sheets."""
 
@@ -211,7 +211,6 @@ def train_example():
     num_step_types = 5
     num_targets = 2
 
-    _generate_example_csv(csv_path, num_samples=200, seq_len=seq_len, num_targets=num_targets, num_step_types=num_step_types)
     dataset = RecipeDataset(csv_path, seq_len=seq_len, num_step_types=num_step_types)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
 

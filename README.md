@@ -14,6 +14,7 @@ step influences the prediction or etch depth.
 
 ## Files
 
+
 - `attention_model.py` – basic attention model and utilities. Includes an
   example for loading recipe data from an Excel workbook where each sheet
   corresponds to a different recipe structure.
@@ -38,9 +39,11 @@ python attention_model.py
 ```
 
 
-Running the script will train on a small synthetic dataset and then display a
-heatmap of the positional encodings as well as the attention weights for an
-example recipe, giving a quick look at how steps interact.
+
+Running the script expects an input CSV file in the format described in
+`attention_model.py`. It will display a heatmap of the positional encodings as
+well as the attention weights for an example recipe, giving a quick look at how
+steps interact.
 
 
 This repository does not include a dataset. You must provide your own
