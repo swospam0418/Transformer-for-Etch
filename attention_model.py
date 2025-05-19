@@ -78,14 +78,15 @@ class ExcelRecipeDataset(Dataset):
 
         all_step_cols = [f"step_type_{i}" for i in range(max_len)]
         all_knob_cols = [f"knob_{i}" for i in range(max_len)]
-        for df in frames:
+        for i, df in enumerate(frames):
             for col in all_step_cols:
                 if col not in df.columns:
                     df[col] = 0
             for col in all_knob_cols:
                 if col not in df.columns:
                     df[col] = 0.0
-            df.reindex(columns=all_step_cols + all_knob_cols, fill_value=0)
+            df = df.reindex(columns=all_step_cols + all_knob_cols, fill_value=0)
+            frames[i] = df
 
         self.data = pd.concat(frames, ignore_index=True)
         self.seq_len = max_len
