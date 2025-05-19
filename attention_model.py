@@ -406,17 +406,24 @@ def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
         )
 
 
-if __name__ == "__main__":d
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Train transformer on recipe workbook")
-    parser.add_argument("workbook", help="Path to Excel workbook with recipes")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    parser = argparse.ArgumentParser(
+        description="Train transformer on recipe workbook"
+    )
+    parser.add_argument(
+        "workbook",
+        help="Path to Excel workbook with recipes",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=10,
+        help="Number of training epochs",
+    )
     args = parser.parse_args()
 
     train_multisheet_excel(args.workbook, epochs=args.epochs)
-
-    # Example usage: provide an Excel workbook with multiple recipe sheets.
-    train_multisheet_excel("recipes.xlsx")
 
 
