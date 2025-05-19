@@ -21,6 +21,10 @@ step influences the prediction or etch depth.
 - `requirements.txt` – Python dependencies (including `openpyxl` for Excel
   support).
 
+- `attention_model.py` – basic attention model and utilities.
+- `etch_rate_model.py` – extended example with film scheme and layout embeddings.
+- `requirements.txt` – Python dependencies.
+
 ## Usage
 
 Install the dependencies and adapt the dataset loader in `attention_model.py`
