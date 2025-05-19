@@ -62,15 +62,6 @@ class RecipeDataset(Dataset):
         return torch.from_numpy(step_types), torch.from_numpy(knobs), torch.from_numpy(targets)
 
 
-def _generate_example_csv(path: str, num_samples=100, seq_len=4, num_targets=2, num_step_types=5):
-    rng = np.random.default_rng(0)
-    data = {}
-    for i in range(seq_len):
-        data[f"step_type_{i}"] = rng.integers(0, num_step_types, size=num_samples)
-        data[f"knob_{i}"] = rng.random(size=num_samples)
-    for t in range(num_targets):
-        data[f"target_{t}"] = rng.random(size=num_samples)
-    pd.DataFrame(data).to_csv(path, index=False)
 
 
 class AttentionModel(nn.Module):
@@ -133,23 +124,6 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
     if weights.dim() == 3:
         weights = weights.mean(0)
     return weights.mean(0)
-  
-    def __init__(self, num_step_types: int, d_model: int, nhead: int, num_targets: int):
-        super().__init__()
-        self.embedding = nn.Embedding(num_step_types, d_model)
-        self.knob_proj = nn.Linear(1, d_model)
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=2)
-        self.fc = nn.Linear(d_model, num_targets)
-
-    def forward(self, step_types: torch.Tensor, knobs: torch.Tensor):
-        # step_types: (B, L)
-        # knobs: (B, L)
-        emb = self.embedding(step_types) + self.knob_proj(knobs.unsqueeze(-1))
-        emb = emb.transpose(0, 1)  # (L, B, D)
-        enc = self.encoder(emb)
-        enc = enc.mean(dim=0)  # (B, D)
-        return self.fc(enc)
 
 
 def train_example():
@@ -158,13 +132,11 @@ def train_example():
     num_step_types = 5
     num_targets = 2
 
-    _generate_example_csv(csv_path, num_samples=200, seq_len=seq_len, num_targets=num_targets, num_step_types=num_step_types)
     dataset = RecipeDataset(csv_path, seq_len=seq_len, num_step_types=num_step_types)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
 
     model = AttentionModel(num_step_types=num_step_types, d_model=32, nhead=4, num_targets=num_targets, seq_len=seq_len)
-    model = AttentionModel(num_step_types=num_step_types, d_model=32, nhead=4, num_targets=num_targets)
     optim = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
