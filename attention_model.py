@@ -251,35 +251,6 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
     return weights.mean(0)
 
 
-def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
-    """Train on a workbook containing multiple recipe structures."""
-    dataset = MultiSheetRecipeDataset(excel_path)
-    train_size = int(len(dataset) * 0.8)
-    test_size = len(dataset) - train_size
-    train_ds, test_ds = random_split(dataset, [train_size, test_size])
-
-    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
-    test_loader = DataLoader(test_ds, batch_size=16, shuffle=False)
-
-    # visualize positional encodings
-    plot_positional_encoding(model.pos_encoder.pe[:seq_len])
-
-    # show attention weights for first batch
-    step_types, knobs, _ = next(iter(loader))
-    attn = model.attention_heatmap(step_types[0], knobs[0])
-    plot_attention_heatmap(attn)
-    print("Step importance:", step_importance(attn))
-
-
-def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
-    """Train on a workbook containing multiple recipe structures."""
-    dataset = MultiSheetRecipeDataset(excel_path)
-    train_size = int(len(dataset) * 0.8)
-    test_size = len(dataset) - train_size
-    train_ds, test_ds = random_split(dataset, [train_size, test_size])
-
-    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
-    test_loader = DataLoader(test_ds, batch_size=16, shuffle=False)
 
 def train_excel_example():
     excel_path = "recipes.xlsx"
