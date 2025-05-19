@@ -35,6 +35,21 @@ pip install -r requirements.txt
 python attention_model.py recipes.xlsx --epochs 20
 ```
 
+When running the script from an IDE such as VS Code that uses an IPython
+kernel, make sure the workbook path is supplied on the command line. For
+example:
+
+```bash
+python attention_model.py my_recipes.xlsx
+```
+
+You can also invoke the training routine directly from a Python shell:
+
+```python
+from attention_model import train_multisheet_excel
+train_multisheet_excel("my_recipes.xlsx")
+```
+
 If no workbook path is given, the script looks for `recipes.xlsx` in the current directory.
 
 This repository does not include any dataset; you must supply your own workbook to train the model.
