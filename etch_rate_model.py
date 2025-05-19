@@ -39,10 +39,6 @@ class EtchRateDataset(Dataset):
         )
 
 
-
-
-
-
 class EtchRateTransformer(nn.Module):
     """Transformer model for etch rate prediction with scheme/layout embeddings."""
 
@@ -82,6 +78,42 @@ class EtchRateTransformer(nn.Module):
         x = self.pos_encoder(x)
         enc = self.encoder(x)
         return self.fc(enc.mean(dim=1))
+
+
+
+def train_etch_rate_example():
+    csv_path = "etch_example.csv"
+    seq_len = 5
+    num_step_types = 6
+    num_schemes = 3
+    num_layouts = 2
+    num_targets = 1
+
+
+    dataset = EtchRateDataset(csv_path, seq_len=seq_len)
+    loader = DataLoader(dataset, batch_size=16, shuffle=True)
+
+    model = EtchRateTransformer(
+        num_step_types=num_step_types,
+        num_schemes=num_schemes,
+        num_layouts=num_layouts,
+        d_model=32,
+        nhead=4,
+        num_targets=num_targets,
+        seq_len=seq_len,
+    )
+    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = nn.MSELoss()
+
+    model.train()
+    for epoch in range(5):
+        for step_types, knobs, scheme, layout, targets in loader:
+            optim.zero_grad()
+            preds = model(step_types, knobs, scheme, layout)
+            loss = loss_fn(preds, targets)
+            loss.backward()
+            optim.step()
+        print(f"Epoch {epoch+1} loss: {loss.item():.4f}")
 
 
 if __name__ == "__main__":
