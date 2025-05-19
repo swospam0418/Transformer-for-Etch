@@ -78,14 +78,15 @@ class ExcelRecipeDataset(Dataset):
 
         all_step_cols = [f"step_type_{i}" for i in range(max_len)]
         all_knob_cols = [f"knob_{i}" for i in range(max_len)]
-        for df in frames:
+        for i, df in enumerate(frames):
             for col in all_step_cols:
                 if col not in df.columns:
                     df[col] = 0
             for col in all_knob_cols:
                 if col not in df.columns:
                     df[col] = 0.0
-            df.reindex(columns=all_step_cols + all_knob_cols, fill_value=0)
+            df = df.reindex(columns=all_step_cols + all_knob_cols, fill_value=0)
+            frames[i] = df
 
         self.data = pd.concat(frames, ignore_index=True)
         self.seq_len = max_len
@@ -252,6 +253,7 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
 
 
 
+
 def train_excel_example():
     excel_path = "recipes.xlsx"
     dataset = ExcelRecipeDataset(excel_path)
@@ -324,6 +326,7 @@ def train_excel_example():
         )
 
 
+
 def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
     """Train on a workbook containing multiple recipe structures."""
     dataset = MultiSheetRecipeDataset(excel_path)
@@ -393,31 +396,6 @@ def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
         )
 
 
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Train transformer on recipe workbook"
-    )
-    parser.add_argument(
-        "workbook",
-        help="Path to Excel workbook with recipes",
-    )
-    parser.add_argument(
-        "--epochs",
-        type=int,
-        default=10,
-        help="Number of training epochs",
-    )
-    args = parser.parse_args()
-
-    train_multisheet_excel(args.workbook, epochs=args.epochs)
-
-
-    # Example usage: provide an Excel workbook with multiple recipe sheets.
-    train_multisheet_excel("recipes.xlsx")
-
-    
 if __name__ == "__main__":
     import argparse
 
