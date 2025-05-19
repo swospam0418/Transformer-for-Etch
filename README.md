@@ -14,7 +14,8 @@ step influences the prediction or etch depth.
 
 ## Files
 
-- `attention_model.py` – defines the dataset loader and the model.
+- `attention_model.py` – basic attention model and utilities.
+- `etch_rate_model.py` – extended example with film scheme and layout embeddings.
 - `requirements.txt` – Python dependencies.
 
 ## Usage
