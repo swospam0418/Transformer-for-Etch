@@ -251,7 +251,6 @@ def step_importance(weights: torch.Tensor) -> torch.Tensor:
     return weights.mean(0)
 
 
-
 def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
     """Train on a workbook containing multiple recipe structures."""
     dataset = MultiSheetRecipeDataset(excel_path)
@@ -271,6 +270,16 @@ def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
     plot_attention_heatmap(attn)
     print("Step importance:", step_importance(attn))
 
+
+def train_multisheet_excel(excel_path: str, epochs: int = 10) -> None:
+    """Train on a workbook containing multiple recipe structures."""
+    dataset = MultiSheetRecipeDataset(excel_path)
+    train_size = int(len(dataset) * 0.8)
+    test_size = len(dataset) - train_size
+    train_ds, test_ds = random_split(dataset, [train_size, test_size])
+
+    train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
+    test_loader = DataLoader(test_ds, batch_size=16, shuffle=False)
 
 def train_excel_example():
     excel_path = "recipes.xlsx"
@@ -326,7 +335,14 @@ def train_excel_example():
     sample_steps, sample_knobs, sample_targets = next(iter(test_loader))
     attn = model.attention_heatmap(sample_steps[0], sample_knobs[0])
     plot_attention_heatmap(attn)
-    print("Step importance:", step_importance(attn))
+
+    # show real vs predicted for a few recipes
+    with torch.no_grad():
+        preds = model(sample_steps, sample_knobs)
+    for i in range(min(3, len(sample_steps))):
+        print(
+            f"Recipe {i}: real={sample_targets[i].tolist()} pred={preds[i].tolist()}"
+        )
 
     # show real vs predicted for a few recipes
     with torch.no_grad():
@@ -419,4 +435,26 @@ if __name__ == "__main__":d
     # Example usage: provide an Excel workbook with multiple recipe sheets.
     train_multisheet_excel("recipes.xlsx")
 
+    
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Train the attention model on a recipe workbook"
+    )
+    parser.add_argument(
+        "workbook",
+        nargs="?",
+        default="recipes.xlsx",
+        help="Path to the Excel workbook with recipe sheets",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=10,
+        help="Number of training epochs",
+    )
+    args, _ = parser.parse_known_args()
+
+    train_multisheet_excel(args.workbook, epochs=args.epochs)
 
